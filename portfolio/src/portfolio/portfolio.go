@@ -20,7 +20,10 @@ func OpenPortfolio(name string) (*Portfolio, error) {
 		name: trimmedName,
 	}
 
-	portfolio.domainEvents = append(portfolio.domainEvents, newPortfolioOpened(*portfolio))
+	portfolio.domainEvents = append(portfolio.domainEvents, PortfolioOpened{
+		BaseDomainEvent: *common.NewBaseDomainEvent("portfolio-opened"),
+		portfolioId:     portfolio.Id(),
+	})
 
 	return portfolio, nil
 
@@ -38,15 +41,6 @@ func (p Portfolio) Id() string {
 
 func (p Portfolio) Name() string {
 	return p.name
-}
-
-
-
-func newPortfolioOpened(portfolio Portfolio) PortfolioOpened {
-	return PortfolioOpened{
-		BaseDomainEvent: *common.NewBaseDomainEvent("portfolio-opened"),
-		portfolioId:     portfolio.Id(),
-	}
 }
 
 type PortfolioOpened struct {
