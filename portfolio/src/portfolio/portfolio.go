@@ -16,7 +16,7 @@ func OpenPortfolio(name string) (*Portfolio, error) {
 	}
 
 	portfolio := &Portfolio{
-		id:   uuid.NewString(),
+		id:   PortfolioId(uuid.NewString()),
 		name: trimmedName,
 	}
 
@@ -29,13 +29,15 @@ func OpenPortfolio(name string) (*Portfolio, error) {
 
 }
 
+type PortfolioId string
+
 type Portfolio struct {
 	domainEvents []common.DomainEvent
-	id           string
+	id           PortfolioId
 	name         string
 }
 
-func (p Portfolio) Id() string {
+func (p Portfolio) Id() PortfolioId {
 	return p.id
 }
 
@@ -56,16 +58,16 @@ func (p *Portfolio) ClearDomainEvents() {
 }
 
 type PortfolioRepository interface {
-	common.Repository[string, *Portfolio]
+	common.Repository[PortfolioId, *Portfolio]
 	FindByName(name string) (*Portfolio, error)
 }
 
 type PortfolioOpened struct {
 	common.BaseDomainEvent
-	portfolioId string
+	portfolioId PortfolioId
 }
 
-func (p PortfolioOpened) PortfolioId() string {
+func (p PortfolioOpened) PortfolioId() PortfolioId {
 	return p.portfolioId
 }
 

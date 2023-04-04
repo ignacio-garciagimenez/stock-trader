@@ -19,7 +19,7 @@ func TestOpenPortfolio(t *testing.T) {
 		assert.Equal(t, portfolio.Id(), portfolio.domainEvents[0].(PortfolioOpened).PortfolioId())
 	})
 
-	t.Run("Open Portfolio with empty", func(t *testing.T) {
+	t.Run("Open Portfolio with empty name", func(t *testing.T) {
 		portfolio, err := OpenPortfolio("  ")
 
 		assert.Error(t, err)

@@ -6,7 +6,7 @@ import (
 )
 
 type InMemoryPortfolioRepository struct {
-	*common.InMemoryBaseRepository[string, *Portfolio]
+	*common.InMemoryBaseRepository[PortfolioId, *Portfolio]
 	nameIndex map[string]*Portfolio
 }
 

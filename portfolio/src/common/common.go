@@ -73,3 +73,10 @@ func (r *InMemoryBaseRepository[K, V]) Save(entity V) error {
 
 	return nil
 }
+
+func NewInMemoryBaseRepository[K comparable, V AggregateRoot[K]]() *InMemoryBaseRepository[K, V] {
+	return &InMemoryBaseRepository[K, V]{
+		entities:     map[K]V{},
+		domainEvents: []DomainEvent{},
+	}
+}

@@ -8,7 +8,7 @@ type OpenPortfolioCommand struct {
 	name string
 }
 
-func (h *OpenPortfolioHandler) Open(command OpenPortfolioCommand) (string, error) {
+func (h *OpenPortfolioHandler) Open(command OpenPortfolioCommand) (PortfolioId, error) {
 	portfolio, err := OpenPortfolio(command.name)
 	if err != nil {
 		return "", err
