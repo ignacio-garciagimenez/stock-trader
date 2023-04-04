@@ -14,5 +14,7 @@ func (h *OpenPortfolioHandler) Open(command OpenPortfolioCommand) (string, error
 		return "", err
 	}
 
+	h.portfolioRepository.Save(portfolio)
+
 	return portfolio.id, nil
 }

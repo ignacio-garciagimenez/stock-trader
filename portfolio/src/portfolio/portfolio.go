@@ -56,6 +56,7 @@ func (p *Portfolio) ClearDomainEvents() {
 }
 
 type PortfolioRepository interface {
+	common.Repository[string, *Portfolio]
 	FindByName(name string) (*Portfolio, error)
 }
 
