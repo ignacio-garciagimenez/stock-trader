@@ -51,8 +51,12 @@ func (p Portfolio) DomainEvents() []common.DomainEvent {
 	return output
 }
 
-func (p *Portfolio) Clear() {
+func (p *Portfolio) ClearDomainEvents() {
 	p.domainEvents = []common.DomainEvent{}
+}
+
+type PortfolioRepository interface {
+	FindByName(name string) (*Portfolio, error)
 }
 
 type PortfolioOpened struct {
