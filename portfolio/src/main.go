@@ -1,8 +1,18 @@
 package main
 
-import "fmt"
-import "rsc.io/quote"
+import (
+	"net/http"
+
+	"github.com/labstack/echo/v4"
+)
+
 
 func main() {
-	fmt.Println(quote.Go())
+	e := echo.New()
+
+	e.GET("/", func (ctx echo.Context) error {
+		return ctx.String(http.StatusOK, "Hello, World!")
+	})
+
+	e.Logger.Fatal(e.Start(":8080"))
 }

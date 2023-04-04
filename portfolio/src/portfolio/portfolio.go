@@ -43,6 +43,18 @@ func (p Portfolio) Name() string {
 	return p.name
 }
 
+func (p Portfolio) DomainEvents() []common.DomainEvent {
+	output := []common.DomainEvent{}
+	for _, value := range p.domainEvents {
+		output = append(output, value)
+	}
+	return output
+}
+
+func (p *Portfolio) Clear() {
+	p.domainEvents = []common.DomainEvent{}
+}
+
 type PortfolioOpened struct {
 	common.BaseDomainEvent
 	portfolioId string

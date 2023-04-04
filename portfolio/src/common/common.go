@@ -38,3 +38,8 @@ func (d BaseDomainEvent) Name() string {
 func (d BaseDomainEvent) Timestamp() time.Time {
 	return d.timestamp
 }
+
+type AggregateRoot interface {
+	DomainEvents() []DomainEvent
+	ClearDomainEvents()
+}
