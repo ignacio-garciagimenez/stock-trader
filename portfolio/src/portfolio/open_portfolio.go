@@ -12,7 +12,7 @@ type OpenPortfolioHandler struct {
 }
 
 type OpenPortfolioCommand struct {
-	Name string `json:"name"`
+	Name string `json:"name" validate:"required,gt=4,lt=31"`
 }
 
 type OpenPortfolioEndpoint struct {
@@ -28,7 +28,10 @@ func (e *OpenPortfolioEndpoint) Open(c echo.Context) error {
 	portfolioId, err := e.handler.Handle(*command)
 
 	if err != nil {
-		return err
+		if err, ok := err.(*PortfolioWithSameNameAlreadyOpened); ok {
+			return echo.NewHTTPError(http.StatusConflict, err.Error())
+		}
+		return echo.NewHTTPError(500, err.Error())
 	}
 
 	return c.JSON(http.StatusCreated, struct {
@@ -44,7 +47,9 @@ func (h *OpenPortfolioHandler) Handle(command OpenPortfolioCommand) (PortfolioId
 		return "", err
 	}
 
-	h.portfolioRepository.Save(portfolio)
+	if err = h.portfolioRepository.Save(portfolio); err != nil {
+		return "", err
+	}
 
 	return portfolio.id, nil
 }
