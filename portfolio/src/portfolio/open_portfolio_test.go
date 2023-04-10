@@ -9,7 +9,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
@@ -113,6 +112,7 @@ func Test_OpenPortfolioEndpoint(t *testing.T) {
 		}
 
 		e := echo.New()
+		e.Validator = common.NewRequestValidator()
 		req := httptest.NewRequest(http.MethodPost, "/portfolios", strings.NewReader(fmt.Sprintf(`{"name":"%s"}`, "A Portfolio name")))
 		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 		rec := httptest.NewRecorder()
@@ -134,6 +134,7 @@ func Test_OpenPortfolioEndpoint(t *testing.T) {
 		}
 
 		e := echo.New()
+		e.Validator = common.NewRequestValidator()
 		req := httptest.NewRequest(http.MethodPost, "/portfolios", strings.NewReader(fmt.Sprintf(`{"name":"%s"}`, "A Portfolio name")))
 		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 		rec := httptest.NewRecorder()
@@ -157,6 +158,7 @@ func Test_OpenPortfolioEndpoint(t *testing.T) {
 		}
 
 		e := echo.New()
+		e.Validator = common.NewRequestValidator()
 		req := httptest.NewRequest(http.MethodPost, "/portfolios", strings.NewReader(fmt.Sprintf(`{"name":"%s"}`, "A Portfolio name")))
 		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 		rec := httptest.NewRecorder()
@@ -170,29 +172,64 @@ func Test_OpenPortfolioEndpoint(t *testing.T) {
 			assert.Equal(t, `unexpected error`, err.Message)
 		}
 	})
-}
 
-func Test_OpenPortfolioCommandValidation(t *testing.T) {
-	validator := validator.New()
+	t.Run("Open Portfolio with validation errors", func(t *testing.T) {
+		tests := []struct {
+			testName           string
+			requestBody        string
+			validationResponse string
+		}{
+			{
+				testName:           "No Portfolio Name",
+				requestBody:        "",
+				validationResponse: "Name is a required field",
+			},
+			{
+				testName:           "Portfolio Name too Short",
+				requestBody:        fmt.Sprintf(`{"name":"%s"}`, "name"),
+				validationResponse: "Name must be greater than 4 characters in length",
+			},
+			{
+				testName:           "Portfolio Name too Long",
+				requestBody:        fmt.Sprintf(`{"name":"%s"}`, "a name that is way too looooong"),
+				validationResponse: "Name must be less than 31 characters in length",
+			},
+		}
 
-	command := &OpenPortfolioCommand{
-		Name: "name",
-	}
+		endpoint := &OpenPortfolioEndpoint{
+			handler: nil,
+		}
 
-	err := validator.Struct(command)
-	assert.Error(t, err)
+		e := echo.New()
+		e.Validator = common.NewRequestValidator()
 
-	command.Name = ""
-	err = validator.Struct(command)
-	assert.Error(t, err)
+		for _, tc := range tests {
+			t.Run(tc.testName, func(t *testing.T) {
+				req := httptest.NewRequest(http.MethodPost, "/portfolios", strings.NewReader(tc.requestBody))
+				req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+				rec := httptest.NewRecorder()
+				c := e.NewContext(req, rec)
 
-	command.Name = "A name that is way too looooong"
-	err = validator.Struct(command)
-	assert.Error(t, err)
+				err := endpoint.Open(c)
 
-	command.Name = "Valid Name"
-	err = validator.Struct(command)
-	assert.Nil(t, err)
+				if assert.Error(t, err) {
+					err := err.(*echo.HTTPError)
+					assert.Equal(t, http.StatusBadRequest, err.Code)
+					assert.Equal(t, &common.ValidationErrorsResponse{
+						Message: "there were validation errors",
+						Errors: []common.FieldError{
+							{
+								Field: "Name",
+								Error: tc.validationResponse,
+							},
+						},
+					}, err.Message)
+				}
+			})
+
+		}
+
+	})
 }
 
 type StubHandler[K any, V any] struct {

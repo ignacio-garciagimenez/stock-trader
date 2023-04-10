@@ -25,6 +25,10 @@ func (e *OpenPortfolioEndpoint) Open(c echo.Context) error {
 		return err
 	}
 
+	if err := c.Validate(command); err != nil {
+		return err
+	}
+
 	portfolioId, err := e.handler.Handle(*command)
 
 	if err != nil {

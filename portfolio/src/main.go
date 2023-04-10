@@ -2,6 +2,7 @@ package main
 
 import (
 	"net/http"
+	"stock-trader/portfolio-context/src/common"
 
 	"github.com/labstack/echo/v4"
 )
@@ -9,6 +10,8 @@ import (
 
 func main() {
 	e := echo.New()
+
+	e.Validator = common.NewRequestValidator()
 
 	e.GET("/", func (ctx echo.Context) error {
 		return ctx.String(http.StatusOK, "Hello, World!")
