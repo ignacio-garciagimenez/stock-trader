@@ -2,16 +2,21 @@ package portfolio
 
 import (
 	"net/http"
+	"stock-trader/portfolio-context/src/common"
 
 	"github.com/labstack/echo/v4"
 )
 
-type Handler[K any, V any] interface {
-	Handle(K) (V, error)
+type OpenPortfolioHandler struct {
+	portfolioRepository PortfolioRepository
+}
+
+type OpenPortfolioCommand struct {
+	Name string `json:"name"`
 }
 
 type OpenPortfolioEndpoint struct {
-	handler Handler[OpenPortfolioCommand, PortfolioId]
+	handler common.Handler[OpenPortfolioCommand, PortfolioId]
 }
 
 func (e *OpenPortfolioEndpoint) Open(c echo.Context) error {
@@ -31,14 +36,6 @@ func (e *OpenPortfolioEndpoint) Open(c echo.Context) error {
 	}{
 		PortfolioId: portfolioId,
 	})
-}
-
-type OpenPortfolioHandler struct {
-	portfolioRepository PortfolioRepository
-}
-
-type OpenPortfolioCommand struct {
-	Name string `json:"name"`
 }
 
 func (h *OpenPortfolioHandler) Handle(command OpenPortfolioCommand) (PortfolioId, error) {

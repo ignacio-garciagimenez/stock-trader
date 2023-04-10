@@ -8,7 +8,6 @@
 🌀 This Application is `in-progress` and I will add new features and technologies over time. 
 
 ## Bounded Contexts
-
 - Portfolio
 - Broker
 - Wire Transfers
@@ -38,7 +37,7 @@
 ## Features and Technologies
 - ✅ Using `Vertical Slice Architecture` as a high level architecture
 - ✅ Using `Event Driven Architecture` 
-- ✅ Using `CQRS Pattern`
+- ✅ Using `CQRS`
 - ✅ Using [Echo](https://github.com/labstack/echo) framework
 - `To be Continued`
 

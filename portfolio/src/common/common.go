@@ -7,6 +7,10 @@ import (
 	"github.com/google/uuid"
 )
 
+type Handler[K any, V any] interface {
+	Handle(K) (V, error)
+}
+
 type DomainEvent interface {
 	Id() string
 	Name() string
