@@ -1,11 +1,13 @@
 package portfolio
 
 import (
+	"context"
 	"errors"
 	"strings"
 
-	"github.com/google/uuid"
 	"stock-trader/portfolio-context/src/common"
+
+	"github.com/google/uuid"
 )
 
 func OpenPortfolio(name string) (*Portfolio, error) {
@@ -59,7 +61,7 @@ func (p *Portfolio) ClearDomainEvents() {
 
 type PortfolioRepository interface {
 	common.Repository[PortfolioId, *Portfolio]
-	FindByName(name string) (*Portfolio, error)
+	FindByName(context.Context,  string) (*Portfolio, error)
 }
 
 type PortfolioOpened struct {

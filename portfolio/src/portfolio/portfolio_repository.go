@@ -1,6 +1,7 @@
 package portfolio
 
 import (
+	"context"
 	"errors"
 	"stock-trader/portfolio-context/src/common"
 )
@@ -10,8 +11,8 @@ type InMemoryPortfolioRepository struct {
 	nameIndex map[string]*Portfolio
 }
 
-func (r *InMemoryPortfolioRepository) Save(entity *Portfolio) error {
-	if err := r.InMemoryBaseRepository.Save(entity); err != nil {
+func (r *InMemoryPortfolioRepository) Save(ctx context.Context, entity *Portfolio) error {
+	if err := r.InMemoryBaseRepository.Save(ctx, entity); err != nil {
 		return err
 	}
 
@@ -19,7 +20,7 @@ func (r *InMemoryPortfolioRepository) Save(entity *Portfolio) error {
 	return nil
 }
 
-func (r *InMemoryPortfolioRepository) FindByName(name string) (*Portfolio, error) {
+func (r *InMemoryPortfolioRepository) FindByName(ctx context.Context, name string) (*Portfolio, error) {
 	if portfolio, found := r.nameIndex[name]; found {
 		return portfolio, nil
 	}

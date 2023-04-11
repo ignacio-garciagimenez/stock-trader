@@ -1,6 +1,7 @@
 package portfolio
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -105,7 +106,7 @@ func Test_OpenPortfolioEndpoint(t *testing.T) {
 		portfolioId := PortfolioId(uuid.NewString())
 		endpoint := &OpenPortfolioEndpoint{
 			handler: &StubHandler[OpenPortfolioCommand, PortfolioId]{
-				call: func(command OpenPortfolioCommand) (PortfolioId, error) {
+				call: func(ctx context.Context, command OpenPortfolioCommand) (PortfolioId, error) {
 					return portfolioId, nil
 				},
 			},
@@ -127,7 +128,7 @@ func Test_OpenPortfolioEndpoint(t *testing.T) {
 		portfolioId := PortfolioId(uuid.NewString())
 		endpoint := &OpenPortfolioEndpoint{
 			handler: &StubHandler[OpenPortfolioCommand, PortfolioId]{
-				call: func(command OpenPortfolioCommand) (PortfolioId, error) {
+				call: func(ctx context.Context, command OpenPortfolioCommand) (PortfolioId, error) {
 					return portfolioId, NewPortfolioWithSameNameAlreadyOpened("A Portfolio name")
 				},
 			},
@@ -151,7 +152,7 @@ func Test_OpenPortfolioEndpoint(t *testing.T) {
 	t.Run("Open Portfolio With Unexpected Error", func(t *testing.T) {
 		endpoint := &OpenPortfolioEndpoint{
 			handler: &StubHandler[OpenPortfolioCommand, PortfolioId]{
-				call: func(command OpenPortfolioCommand) (PortfolioId, error) {
+				call: func(ctx context.Context, command OpenPortfolioCommand) (PortfolioId, error) {
 					return "", errors.New("unexpected error")
 				},
 			},
@@ -233,27 +234,27 @@ func Test_OpenPortfolioEndpoint(t *testing.T) {
 }
 
 type StubHandler[K any, V any] struct {
-	call func(K) (V, error)
+	call func(context.Context, K) (V, error)
 }
 
-func (s *StubHandler[K, V]) Handle(command K) (V, error) {
-	return s.call(command)
+func (s *StubHandler[K, V]) Handle(ctx context.Context, command K) (V, error) {
+	return s.call(ctx, command)
 }
 
 type StubPortfolioRepository struct {
-	save       func(*Portfolio) error
-	findById   func(PortfolioId) (*Portfolio, error)
-	findByName func(string) (*Portfolio, error)
+	save       func(context.Context, *Portfolio) error
+	findById   func(context.Context, PortfolioId) (*Portfolio, error)
+	findByName func(context.Context, string) (*Portfolio, error)
 }
 
-func (r *StubPortfolioRepository) Save(portfolio *Portfolio) error {
-	return r.save(portfolio)
+func (r *StubPortfolioRepository) Save(ctx context.Context, portfolio *Portfolio) error {
+	return r.save(ctx, portfolio)
 }
 
-func (r *StubPortfolioRepository) FindById(portfolioId PortfolioId) (*Portfolio, error) {
-	return r.findById(portfolioId)
+func (r *StubPortfolioRepository) FindById(ctx context.Context, portfolioId PortfolioId) (*Portfolio, error) {
+	return r.findById(ctx, portfolioId)
 }
 
-func (r *StubPortfolioRepository) FindByName(name string) (*Portfolio, error) {
-	return r.findByName(name)
+func (r *StubPortfolioRepository) FindByName(ctx context.Context, name string) (*Portfolio, error) {
+	return r.findByName(ctx, name)
 }

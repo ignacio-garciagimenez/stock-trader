@@ -1,6 +1,7 @@
 package portfolio
 
 import (
+	"context"
 	"net/http"
 	"stock-trader/portfolio-context/src/common"
 
@@ -29,7 +30,7 @@ func (e *OpenPortfolioEndpoint) Open(c echo.Context) error {
 		return err
 	}
 
-	portfolioId, err := e.handler.Handle(*command)
+	portfolioId, err := e.handler.Handle(c.Request().Context(), *command)
 
 	if err != nil {
 		if err, ok := err.(*PortfolioWithSameNameAlreadyOpened); ok {
@@ -45,13 +46,13 @@ func (e *OpenPortfolioEndpoint) Open(c echo.Context) error {
 	})
 }
 
-func (h *OpenPortfolioHandler) Handle(command OpenPortfolioCommand) (PortfolioId, error) {
+func (h *OpenPortfolioHandler) Handle(ctx context.Context, command OpenPortfolioCommand) (PortfolioId, error) {
 	portfolio, err := OpenPortfolio(command.Name)
 	if err != nil {
 		return "", err
 	}
 
-	if err = h.portfolioRepository.Save(portfolio); err != nil {
+	if err = h.portfolioRepository.Save(ctx, portfolio); err != nil {
 		return "", err
 	}
 

@@ -1,6 +1,7 @@
 package common
 
 import (
+	"context"
 	"errors"
 	"time"
 
@@ -8,7 +9,7 @@ import (
 )
 
 type Handler[K any, V any] interface {
-	Handle(K) (V, error)
+	Handle(context.Context, K) (V, error)
 }
 
 type DomainEvent interface {
@@ -51,8 +52,8 @@ type AggregateRoot[K comparable] interface {
 }
 
 type Repository[K comparable, V AggregateRoot[K]] interface {
-	FindById(K) (V, error)
-	Save(V) error
+	FindById(context.Context, K) (V, error)
+	Save(context.Context, V) error
 }
 
 type InMemoryBaseRepository[K comparable, V AggregateRoot[K]] struct {
@@ -60,7 +61,7 @@ type InMemoryBaseRepository[K comparable, V AggregateRoot[K]] struct {
 	domainEvents []DomainEvent
 }
 
-func (r *InMemoryBaseRepository[K, V]) FindById(key K) (V, error) {
+func (r *InMemoryBaseRepository[K, V]) FindById(ctx context.Context, key K) (V, error) {
 	var entity V
 	if entity, found := r.entities[key]; found {
 		return entity, nil
@@ -69,7 +70,7 @@ func (r *InMemoryBaseRepository[K, V]) FindById(key K) (V, error) {
 
 }
 
-func (r *InMemoryBaseRepository[K, V]) Save(entity V) error {
+func (r *InMemoryBaseRepository[K, V]) Save(ctx context.Context, entity V) error {
 	r.entities[entity.Id()] = entity
 
 	//For Transactional Outbox implementation
