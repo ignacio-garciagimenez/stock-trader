@@ -3,7 +3,7 @@ package portfolio
 import (
 	"context"
 	"errors"
-	"stock-trader/portfolio-context/src/common"
+	"stock-trader/portfolio-context/common"
 )
 
 type InMemoryPortfolioRepository struct {
@@ -26,4 +26,9 @@ func (r *InMemoryPortfolioRepository) FindByName(ctx context.Context, name strin
 	}
 
 	return nil, errors.New("entity not found")
+}
+
+type PortfolioEntity struct {
+	ID string `gorm:"primaryKey;size:36;column:id"`
+	name string `gorm:"index;column:name;size:30;not null"`
 }

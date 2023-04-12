@@ -5,7 +5,7 @@ import (
 	"errors"
 	"strings"
 
-	"stock-trader/portfolio-context/src/common"
+	"stock-trader/portfolio-context/common"
 
 	"github.com/google/uuid"
 )

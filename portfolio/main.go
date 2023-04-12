@@ -2,7 +2,7 @@ package main
 
 import (
 	"net/http"
-	"stock-trader/portfolio-context/src/common"
+	"stock-trader/portfolio-context/common"
 
 	"github.com/labstack/echo/v4"
 )

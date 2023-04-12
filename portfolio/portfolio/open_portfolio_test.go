@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"stock-trader/portfolio-context/src/common"
+	"stock-trader/portfolio-context/common"
 	"strings"
 	"testing"
 
@@ -21,7 +21,7 @@ func Test_OpenPortfolioHandler(t *testing.T) {
 			portfolioRepository: &InMemoryPortfolioRepository{},
 		}
 
-		portfolioId, err := handler.Handle(OpenPortfolioCommand{
+		portfolioId, err := handler.Handle(context.Background(), OpenPortfolioCommand{
 			Name: "    ",
 		})
 
@@ -35,7 +35,7 @@ func Test_OpenPortfolioHandler(t *testing.T) {
 			portfolioRepository: &InMemoryPortfolioRepository{},
 		}
 
-		portfolioId, err := handler.Handle(OpenPortfolioCommand{
+		portfolioId, err := handler.Handle(context.Background(), OpenPortfolioCommand{
 			Name: "  Name  ",
 		})
 
@@ -49,7 +49,7 @@ func Test_OpenPortfolioHandler(t *testing.T) {
 			portfolioRepository: &InMemoryPortfolioRepository{},
 		}
 
-		portfolioId, err := handler.Handle(OpenPortfolioCommand{
+		portfolioId, err := handler.Handle(context.Background(), OpenPortfolioCommand{
 			Name: "  Name that is longer than 30 characters  ",
 		})
 
@@ -60,7 +60,7 @@ func Test_OpenPortfolioHandler(t *testing.T) {
 
 	t.Run("Open portfolio with name already provided", func(t *testing.T) {
 		repo := &StubPortfolioRepository{
-			save: func(p *Portfolio) error {
+			save: func(ctx context.Context, p *Portfolio) error {
 				return NewPortfolioWithSameNameAlreadyOpened("A portfolio name")
 			},
 		}
@@ -68,7 +68,7 @@ func Test_OpenPortfolioHandler(t *testing.T) {
 			portfolioRepository: repo,
 		}
 
-		portfolioId, err := handler.Handle(OpenPortfolioCommand{
+		portfolioId, err := handler.Handle(context.Background(), OpenPortfolioCommand{
 			Name: "  A portfolio name  ",
 		})
 
@@ -88,14 +88,14 @@ func Test_OpenPortfolioHandler(t *testing.T) {
 			portfolioRepository: repo,
 		}
 
-		portfolioId, err := handler.Handle(OpenPortfolioCommand{
+		portfolioId, err := handler.Handle(context.Background(), OpenPortfolioCommand{
 			Name: "  A portfolio name  ",
 		})
 
 		assert.Nil(t, err)
 		assert.NotEmpty(t, portfolioId)
 		assert.NotNil(t, func() *Portfolio {
-			portfolio, _ := repo.FindById(portfolioId)
+			portfolio, _ := repo.FindById(context.Background(), portfolioId)
 			return portfolio
 		}())
 	})

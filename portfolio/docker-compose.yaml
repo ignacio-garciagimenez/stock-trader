@@ -1,0 +1,51 @@
+version: "3.8"
+
+services:
+  mysql:
+    image: mysql:8.0.32
+    healthcheck:
+      test: mysqladmin ping -proot
+      interval: 3s
+      timeout: 2s
+      retries: 2
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - mysql:/var/lib/mysql
+    networks:
+      - db
+
+  migrate:
+    image: arigaio/atlas:latest
+    command: migrate apply --url mysql://root:root@mysql:3306/ --revisions-schema portfolio
+    networks:
+      - db
+    depends_on:
+      mysql:
+        condition: service_healthy
+    volumes:
+      - ./migrations/:/migrations
+
+  portfolio:
+    build:
+      context: .
+      target: builder
+    image: portfolio
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    expose:
+      - "8080"
+    volumes:
+      - .:/code
+    command: reflex -r "\.go$$" -s -- sh -c "go run ./"
+    networks:
+      - db
+
+networks:
+  db:
+
+volumes:
+  mysql:
