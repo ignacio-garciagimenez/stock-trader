@@ -26,21 +26,30 @@ services:
       mysql:
         condition: service_healthy
     volumes:
-      - ./migrations/:/migrations
+      - ./portfolio-context/migrations/:/migrations
 
   portfolio:
     build:
       context: .
-      target: builder
-    image: portfolio
+      dockerfile: Dockerfile.Dev
+      target: dev
+      args:
+        USER_ID: ${USER_ID:-0}
+        GROUP_ID: ${GROUP_ID:-0}
+    image: portfolio-dev
     depends_on:
       migrate:
         condition: service_completed_successfully
     expose:
       - "8080"
+      - "8181"
+    ports:
+      - "8080:8080"
+      - "8181:8181"
     volumes:
       - .:/code
-    command: reflex -r "\.go$$" -s -- sh -c "go run ./"
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: reflex -r "\.go$$" -s -- sh -c "dlv debug ./portfolio-context --listen=0.0.0.0:8181 --accept-multiclient --continue --headless --allow-non-terminal-interactive"
     networks:
       - db
 
