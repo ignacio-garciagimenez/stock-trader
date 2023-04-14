@@ -46,7 +46,7 @@ services:
     volumes:
       - .:/code
       - /var/run/docker.sock:/var/run/docker.sock
-    command: reflex -r "\.go$$" -s -- sh -c "dlv debug ./portfolio-context --output=./portfolio-context/__debug_bin --listen=0.0.0.0:9090 --accept-multiclient --continue --headless --allow-non-terminal-interactive"
+    command: supervisord -c /code/supervisor.conf
     networks:
       - db
 

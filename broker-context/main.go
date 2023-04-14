@@ -10,7 +10,7 @@ func main() {
 	e := echo.New()
 
 	e.GET("/", func(ctx echo.Context) error {
-		return ctx.String(http.StatusOK, "[Broker Service] Hello, World From inside dev container! ")
+		return ctx.String(http.StatusOK, "Hello from broker-service! ")
 	})
 
 	e.Logger.Fatal(e.Start(":8081"))
