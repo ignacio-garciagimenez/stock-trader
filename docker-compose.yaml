@@ -40,16 +40,13 @@ services:
     depends_on:
       migrate:
         condition: service_completed_successfully
-    expose:
-      - "8080"
-      - "8181"
     ports:
-      - "8080:8080"
-      - "8181:8181"
+      - "8080-8084:8080-8084"
+      - "9090-9094:9090-9094"
     volumes:
       - .:/code
       - /var/run/docker.sock:/var/run/docker.sock
-    command: reflex -r "\.go$$" -s -- sh -c "dlv debug ./portfolio-context --listen=0.0.0.0:8181 --accept-multiclient --continue --headless --allow-non-terminal-interactive"
+    command: reflex -r "\.go$$" -s -- sh -c "dlv debug ./portfolio-context --output=./portfolio-context/__debug_bin --listen=0.0.0.0:9090 --accept-multiclient --continue --headless --allow-non-terminal-interactive"
     networks:
       - db
 

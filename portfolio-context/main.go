@@ -13,7 +13,7 @@ func main() {
 	e.Validator = common.NewRequestValidator()
 
 	e.GET("/", func(ctx echo.Context) error {
-		return ctx.String(http.StatusOK, "Hello, World From inside container 12! ")
+		return ctx.String(http.StatusOK, "Hello, World From inside container! ")
 	})
 
 	e.Logger.Fatal(e.Start(":8080"))
