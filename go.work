@@ -1,0 +1,6 @@
+go 1.20
+
+use (
+	./broker-context
+	./portfolio-context
+)
