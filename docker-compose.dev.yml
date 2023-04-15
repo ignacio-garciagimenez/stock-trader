@@ -1,0 +1,19 @@
+version: "3.8"
+
+services:
+  dev-environment:
+    build:
+      context: .
+      dockerfile: Dockerfile.Dev
+      target: dev
+      args:
+        USER_ID: ${USER_ID:-0}
+        GROUP_ID: ${GROUP_ID:-0}
+        DOCKER_GROUP_ID: ${DOCKER_GROUP_ID:-0}
+    image: stock-trader-dev-env
+    tty: true
+    environment:
+      - SOURCE_PATH=${SOURCE_PATH}
+    volumes:
+      - .:/stock-trader
+      - /var/run/docker.sock:/var/run/docker.sock

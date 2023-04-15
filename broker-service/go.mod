@@ -1,4 +1,4 @@
-module stock-trader/broker-context
+module stock-trader/broker-service
 
 go 1.20
 

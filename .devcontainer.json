@@ -1,0 +1,22 @@
+{
+  "name": "Stock Trader Development Environment",
+  "dockerComposeFile": "docker-compose.dev.yml",
+  "service": "dev-environment",
+  "workspaceFolder": "/stock-trader",
+  "overrideCommand": true,
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "golang.go",
+        "hashicorp.hcl",
+        "hashicorp.terraform",
+        "waderyan.gitblame",
+        "donjayamanne.githistory",
+        "esbenp.prettier-vscode"
+      ],
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash"
+      }
+    }
+  }
+}

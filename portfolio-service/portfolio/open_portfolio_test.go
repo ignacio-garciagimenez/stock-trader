@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"stock-trader/portfolio-context/common"
+	"stock-trader/portfolio-service/common"
 	"strings"
 	"testing"
 

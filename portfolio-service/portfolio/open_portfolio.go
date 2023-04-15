@@ -3,7 +3,7 @@ package portfolio
 import (
 	"context"
 	"net/http"
-	"stock-trader/portfolio-context/common"
+	"stock-trader/portfolio-service/common"
 
 	"github.com/labstack/echo/v4"
 )

@@ -3,7 +3,7 @@ package portfolio
 import (
 	"context"
 	"errors"
-	"stock-trader/portfolio-context/common"
+	"stock-trader/portfolio-service/common"
 )
 
 type InMemoryPortfolioRepository struct {

@@ -1,27 +1,61 @@
 FROM golang:1.20.3-bullseye as dev
 
-WORKDIR /code
+WORKDIR /stock-trader
 
 ARG USER_ID
 ARG GROUP_ID
+ARG DOCKER_GROUP_ID
 
 # Create the user
 RUN if [ ${USER_ID:-0} -ne 0 ] && [ ${GROUP_ID:-0} -ne 0 ]; then \
-    groupadd --gid ${GROUP_ID} devs \
-    && useradd --uid ${USER_ID} --gid ${GROUP_ID} -m dev \
-    && apt-get update \
-    && apt-get install -y sudo \
-    && echo dev ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/dev \
-    && chmod 0440 /etc/sudoers.d/dev \
+    userdel -f www-data \
+    && if getent group www-data ; then groupdel www-data; fi \
+    && groupadd -g ${GROUP_ID} www-data \
+    && useradd -l -u ${USER_ID} -g www-data -m www-data \
+    && install -d -m 0755 -o www-data -g www-data /home/www-data \
+    && chown --changes --silent --no-dereference --recursive \
+          --from=33:33 ${USER_ID}:${GROUP_ID} \
+        /home/www-data \
+    # && apt-get update \
+    # && apt-get install -y sudo \
+    # && echo dev ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/www-data \
+    # && chmod 0440 /etc/sudoers.d/www-data \
     ;fi
 
-USER dev
 
-# Install dependencies needed for local development
-RUN go install github.com/cespare/reflex@latest
-RUN go install github.com/go-delve/delve/cmd/dlv@latest
-RUN go install golang.org/x/tools/gopls@latest
-RUN go install github.com/ramya-rao-a/go-outline@latest
+# Install MySQL Workbench
+RUN echo "deb http://deb.debian.org/debian sid main contrib non-free" | tee /etc/apt/sources.list.d/sid.list
+RUN apt update
+RUN apt install mysql-workbench -y
+
+# Install docker and docker compose
+RUN apt-get install -y \
+    ca-certificates \
+    curl \
+    gnupg
+RUN install -m 0755 -d /etc/apt/keyrings
+RUN curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+RUN chmod a+r /etc/apt/keyrings/docker.gpg
+RUN echo \
+  "deb [arch="$(dpkg --print-architecture)" signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian \
+  "$(. /etc/os-release && echo "$VERSION_CODENAME")" stable" | \
+  tee /etc/apt/sources.list.d/docker.list > /dev/null
+RUN apt-get update
+RUN apt-get install -y docker-ce-cli docker-buildx-plugin docker-compose-plugin
+
+RUN if getent group ${DOCKER_GROUP_ID} ; then usermod -aG ${DOCKER_GROUP_ID} www-data; \
+    else groupadd -g ${DOCKER_GROUP_ID} docker && usermod -aG docker www-data; \
+    fi
+
+# Install Atlas
 RUN curl -sSf https://atlasgo.sh | sh
 
-RUN sudo apt-get update && sudo apt-get install -y supervisor
+USER www-data
+
+# Install dependencies needed for local development
+RUN go install golang.org/x/tools/gopls@latest
+RUN go install github.com/ramya-rao-a/go-outline@latest
+
+
+
+

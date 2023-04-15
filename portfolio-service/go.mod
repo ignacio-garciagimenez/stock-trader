@@ -1,4 +1,4 @@
-module stock-trader/portfolio-context
+module stock-trader/portfolio-service
 
 go 1.20
 
