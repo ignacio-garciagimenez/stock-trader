@@ -2,13 +2,24 @@ version: "3.8"
 
 services:
   mysql:
-    extends:
-      file: ../common.yml
-      service: mysql
+    image: mysql:8.0.32
+    healthcheck:
+      test: mysqladmin ping -proot
+      interval: 5s
+      timeout: 5s
+      retries: 3
+    ports:
+      - "3306:3306"
+    networks:
+      - stock-trader
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - mysql:/var/lib/mysql
 
   broker-service:
     build:
-      context: .
+      context: broker-service
       dockerfile: Dockerfile
       target: dev
     image: broker-dev
@@ -20,9 +31,15 @@ services:
       - "9091:9091"
     volumes:
       - ${SOURCE_PATH}/broker-service:/code
+    networks:
+      - stock-trader
     command: reflex -r "\.go$" -s -- sh -c "dlv debug . --output=/tmp/__broker_debug_bin --listen=0.0.0.0:9091 --accept-multiclient --continue --headless --allow-non-terminal-interactive"
 
 volumes:
   mysql:
-    name: mysql
+    name: stock-trader_mysql
+
+networks:
+  stock-trader:
+    name: stock-trader_network
 

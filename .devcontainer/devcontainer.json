@@ -1,6 +1,6 @@
 {
   "name": "Stock Trader Development Environment",
-  "dockerComposeFile": "docker-compose.dev.yml",
+  "dockerComposeFile": "docker-compose.dev.yaml",
   "service": "dev-environment",
   "workspaceFolder": "/stock-trader",
   "overrideCommand": true,

@@ -16,17 +16,7 @@ RUN if [ ${USER_ID:-0} -ne 0 ] && [ ${GROUP_ID:-0} -ne 0 ]; then \
     && chown --changes --silent --no-dereference --recursive \
           --from=33:33 ${USER_ID}:${GROUP_ID} \
         /home/www-data \
-    # && apt-get update \
-    # && apt-get install -y sudo \
-    # && echo dev ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/www-data \
-    # && chmod 0440 /etc/sudoers.d/www-data \
     ;fi
-
-
-# Install MySQL Workbench
-RUN echo "deb http://deb.debian.org/debian sid main contrib non-free" | tee /etc/apt/sources.list.d/sid.list
-RUN apt update
-RUN apt install mysql-workbench -y
 
 # Install docker and docker compose
 RUN apt-get install -y \
