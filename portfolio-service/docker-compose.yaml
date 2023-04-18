@@ -49,6 +49,7 @@ services:
 volumes:
   mysql:
     name: stock-trader_mysql
+    
 networks:
   stock-trader:
     name: stock-trader_network

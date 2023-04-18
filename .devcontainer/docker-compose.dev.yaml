@@ -15,10 +15,7 @@ services:
     tty: true
     environment:
       - SOURCE_PATH=$PWD
+    network_mode: "host"
     volumes:
       - ..:/stock-trader
       - /var/run/docker.sock:/var/run/docker.sock
-
-networks:
-  dev:
-    name: stock-trader-dev-environment_network
