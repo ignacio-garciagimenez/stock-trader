@@ -1,3 +1,5 @@
+.PHONY:
+
 stock-trader-up:
 	docker compose -p stock-trader -f portfolio-service/docker-compose.yaml \
 	-f broker-service/docker-compose.yaml \

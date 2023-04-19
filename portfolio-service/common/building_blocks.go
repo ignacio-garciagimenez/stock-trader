@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"gorm.io/datatypes"
 )
 
 type Handler[K any, V any] interface {
@@ -17,6 +18,17 @@ type DomainEvent interface {
 	Name() string
 	Timestamp() time.Time
 	EventData() map[string]any
+}
+
+type DomainEventEntity struct {
+	Id        string            `gorm:"column:id"`
+	Timestamp time.Time         `gorm:"column:timestamp"`
+	Name      string            `gorm:"column:name"`
+	EventData datatypes.JSONMap `gorm:"column:event_data"`
+}
+
+func (DomainEventEntity) TableName() string {
+	return "event_journal"
 }
 
 func NewBaseDomainEvent(name string) *BaseDomainEvent {

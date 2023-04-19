@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"stock-trader/portfolio-service/common"
+	"stock-trader/portfolio-service/portfolio"
 	"strings"
 	"testing"
 
@@ -18,7 +19,7 @@ import (
 func Test_OpenPortfolioHandler(t *testing.T) {
 	t.Run("Open portfolio with empty name", func(t *testing.T) {
 		handler := &OpenPortfolioHandler{
-			portfolioRepository: &InMemoryPortfolioRepository{},
+			portfolioRepository: &portfolio.InMemoryPortfolioRepository{},
 		}
 
 		portfolioId, err := handler.Handle(context.Background(), OpenPortfolioCommand{
@@ -32,7 +33,7 @@ func Test_OpenPortfolioHandler(t *testing.T) {
 
 	t.Run("Open portfolio with short name", func(t *testing.T) {
 		handler := &OpenPortfolioHandler{
-			portfolioRepository: &InMemoryPortfolioRepository{},
+			portfolioRepository: &portfolio.InMemoryPortfolioRepository{},
 		}
 
 		portfolioId, err := handler.Handle(context.Background(), OpenPortfolioCommand{
@@ -46,7 +47,7 @@ func Test_OpenPortfolioHandler(t *testing.T) {
 
 	t.Run("Open portfolio with long name", func(t *testing.T) {
 		handler := &OpenPortfolioHandler{
-			portfolioRepository: &InMemoryPortfolioRepository{},
+			portfolioRepository: &portfolio.InMemoryPortfolioRepository{},
 		}
 
 		portfolioId, err := handler.Handle(context.Background(), OpenPortfolioCommand{
@@ -60,8 +61,8 @@ func Test_OpenPortfolioHandler(t *testing.T) {
 
 	t.Run("Open portfolio with name already provided", func(t *testing.T) {
 		repo := &StubPortfolioRepository{
-			save: func(ctx context.Context, p *Portfolio) error {
-				return NewPortfolioWithSameNameAlreadyOpened("A portfolio name")
+			save: func(ctx context.Context, p *portfolio.Portfolio) error {
+				return portfolio.NewPortfolioWithSameNameAlreadyOpened("A portfolio name")
 			},
 		}
 		handler := &OpenPortfolioHandler{
@@ -73,17 +74,14 @@ func Test_OpenPortfolioHandler(t *testing.T) {
 		})
 
 		if assert.Error(t, err) {
-			assert.IsType(t, &PortfolioWithSameNameAlreadyOpened{}, err)
+			assert.IsType(t, &portfolio.PortfolioWithSameNameAlreadyOpened{}, err)
 			assert.Equal(t, `a portfolio with name "A portfolio name" was already opened`, err.Error())
 			assert.Empty(t, portfolioId)
 		}
 	})
 
 	t.Run("Open portfolio successfully", func(t *testing.T) {
-		repo := &InMemoryPortfolioRepository{
-			InMemoryBaseRepository: common.NewInMemoryBaseRepository[PortfolioId, *Portfolio](),
-			nameIndex:              map[string]*Portfolio{},
-		}
+		repo := portfolio.NewInMemoryPortfolioRepository()
 		handler := &OpenPortfolioHandler{
 			portfolioRepository: repo,
 		}
@@ -94,7 +92,7 @@ func Test_OpenPortfolioHandler(t *testing.T) {
 
 		assert.Nil(t, err)
 		assert.NotEmpty(t, portfolioId)
-		assert.NotNil(t, func() *Portfolio {
+		assert.NotNil(t, func() *portfolio.Portfolio {
 			portfolio, _ := repo.FindById(context.Background(), portfolioId)
 			return portfolio
 		}())
@@ -103,10 +101,10 @@ func Test_OpenPortfolioHandler(t *testing.T) {
 
 func Test_OpenPortfolioEndpoint(t *testing.T) {
 	t.Run("Open Portfolio Successfully", func(t *testing.T) {
-		portfolioId := PortfolioId(uuid.NewString())
+		portfolioId := portfolio.PortfolioId(uuid.NewString())
 		endpoint := &OpenPortfolioEndpoint{
-			handler: &StubHandler[OpenPortfolioCommand, PortfolioId]{
-				call: func(ctx context.Context, command OpenPortfolioCommand) (PortfolioId, error) {
+			handler: &StubHandler[OpenPortfolioCommand, portfolio.PortfolioId]{
+				call: func(ctx context.Context, command OpenPortfolioCommand) (portfolio.PortfolioId, error) {
 					return portfolioId, nil
 				},
 			},
@@ -125,11 +123,11 @@ func Test_OpenPortfolioEndpoint(t *testing.T) {
 		}
 	})
 	t.Run("Open Portfolio With PortfolioWithSameNameAlreadyOpenedError", func(t *testing.T) {
-		portfolioId := PortfolioId(uuid.NewString())
+		portfolioId := portfolio.PortfolioId(uuid.NewString())
 		endpoint := &OpenPortfolioEndpoint{
-			handler: &StubHandler[OpenPortfolioCommand, PortfolioId]{
-				call: func(ctx context.Context, command OpenPortfolioCommand) (PortfolioId, error) {
-					return portfolioId, NewPortfolioWithSameNameAlreadyOpened("A Portfolio name")
+			handler: &StubHandler[OpenPortfolioCommand, portfolio.PortfolioId]{
+				call: func(ctx context.Context, command OpenPortfolioCommand) (portfolio.PortfolioId, error) {
+					return portfolioId, portfolio.NewPortfolioWithSameNameAlreadyOpened("A Portfolio name")
 				},
 			},
 		}
@@ -151,8 +149,8 @@ func Test_OpenPortfolioEndpoint(t *testing.T) {
 	})
 	t.Run("Open Portfolio With Unexpected Error", func(t *testing.T) {
 		endpoint := &OpenPortfolioEndpoint{
-			handler: &StubHandler[OpenPortfolioCommand, PortfolioId]{
-				call: func(ctx context.Context, command OpenPortfolioCommand) (PortfolioId, error) {
+			handler: &StubHandler[OpenPortfolioCommand, portfolio.PortfolioId]{
+				call: func(ctx context.Context, command OpenPortfolioCommand) (portfolio.PortfolioId, error) {
 					return "", errors.New("unexpected error")
 				},
 			},
@@ -242,19 +240,19 @@ func (s *StubHandler[K, V]) Handle(ctx context.Context, command K) (V, error) {
 }
 
 type StubPortfolioRepository struct {
-	save       func(context.Context, *Portfolio) error
-	findById   func(context.Context, PortfolioId) (*Portfolio, error)
-	findByName func(context.Context, string) (*Portfolio, error)
+	save       func(context.Context, *portfolio.Portfolio) error
+	findById   func(context.Context, portfolio.PortfolioId) (*portfolio.Portfolio, error)
+	findByName func(context.Context, string) (*portfolio.Portfolio, error)
 }
 
-func (r *StubPortfolioRepository) Save(ctx context.Context, portfolio *Portfolio) error {
+func (r *StubPortfolioRepository) Save(ctx context.Context, portfolio *portfolio.Portfolio) error {
 	return r.save(ctx, portfolio)
 }
 
-func (r *StubPortfolioRepository) FindById(ctx context.Context, portfolioId PortfolioId) (*Portfolio, error) {
+func (r *StubPortfolioRepository) FindById(ctx context.Context, portfolioId portfolio.PortfolioId) (*portfolio.Portfolio, error) {
 	return r.findById(ctx, portfolioId)
 }
 
-func (r *StubPortfolioRepository) FindByName(ctx context.Context, name string) (*Portfolio, error) {
+func (r *StubPortfolioRepository) FindByName(ctx context.Context, name string) (*portfolio.Portfolio, error) {
 	return r.findByName(ctx, name)
 }

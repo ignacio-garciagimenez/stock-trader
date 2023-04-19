@@ -4,12 +4,13 @@ import (
 	"context"
 	"net/http"
 	"stock-trader/portfolio-service/common"
+	"stock-trader/portfolio-service/portfolio"
 
 	"github.com/labstack/echo/v4"
 )
 
 type OpenPortfolioHandler struct {
-	portfolioRepository PortfolioRepository
+	portfolioRepository portfolio.PortfolioRepository
 }
 
 type OpenPortfolioCommand struct {
@@ -17,7 +18,7 @@ type OpenPortfolioCommand struct {
 }
 
 type OpenPortfolioEndpoint struct {
-	handler common.Handler[OpenPortfolioCommand, PortfolioId]
+	handler common.Handler[OpenPortfolioCommand, portfolio.PortfolioId]
 }
 
 func (e *OpenPortfolioEndpoint) Open(c echo.Context) error {
@@ -33,21 +34,21 @@ func (e *OpenPortfolioEndpoint) Open(c echo.Context) error {
 	portfolioId, err := e.handler.Handle(c.Request().Context(), *command)
 
 	if err != nil {
-		if err, ok := err.(*PortfolioWithSameNameAlreadyOpened); ok {
+		if err, ok := err.(*portfolio.PortfolioWithSameNameAlreadyOpened); ok {
 			return echo.NewHTTPError(http.StatusConflict, err.Error())
 		}
 		return echo.NewHTTPError(500, err.Error())
 	}
 
 	return c.JSON(http.StatusCreated, struct {
-		PortfolioId PortfolioId `json:"portfolio_id"`
+		PortfolioId portfolio.PortfolioId `json:"portfolio_id"`
 	}{
 		PortfolioId: portfolioId,
 	})
 }
 
-func (h *OpenPortfolioHandler) Handle(ctx context.Context, command OpenPortfolioCommand) (PortfolioId, error) {
-	portfolio, err := OpenPortfolio(command.Name)
+func (h *OpenPortfolioHandler) Handle(ctx context.Context, command OpenPortfolioCommand) (portfolio.PortfolioId, error) {
+	portfolio, err := portfolio.OpenPortfolio(command.Name)
 	if err != nil {
 		return "", err
 	}
@@ -56,5 +57,5 @@ func (h *OpenPortfolioHandler) Handle(ctx context.Context, command OpenPortfolio
 		return "", err
 	}
 
-	return portfolio.id, nil
+	return portfolio.Id(), nil
 }

@@ -16,7 +16,7 @@ func TestOpenPortfolio(t *testing.T) {
 		assert.NotNil(t, portfolio.Id())
 		assert.Equal(t, portfolio.Name(), "A Really Looong Portfolio Name")
 		assert.IsType(t, PortfolioOpened{}, portfolio.domainEvents[0])
-		assert.Equal(t, portfolio.Id(), portfolio.domainEvents[0].(PortfolioOpened).PortfolioId())
+		assert.Equal(t, string(portfolio.Id()), portfolio.domainEvents[0].(PortfolioOpened).PortfolioId())
 	})
 
 	t.Run("Open Portfolio with empty name", func(t *testing.T) {

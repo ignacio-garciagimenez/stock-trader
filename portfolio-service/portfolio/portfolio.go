@@ -10,6 +10,19 @@ import (
 	"github.com/google/uuid"
 )
 
+type PortfolioRepository interface {
+	common.Repository[PortfolioId, *Portfolio]
+	FindByName(context.Context, string) (*Portfolio, error)
+}
+
+type PortfolioId string
+
+type Portfolio struct {
+	domainEvents []common.DomainEvent
+	id           PortfolioId
+	name         string
+}
+
 func OpenPortfolio(name string) (*Portfolio, error) {
 	trimmedName := strings.TrimSpace(name)
 
@@ -23,20 +36,12 @@ func OpenPortfolio(name string) (*Portfolio, error) {
 	}
 
 	portfolio.domainEvents = append(portfolio.domainEvents, PortfolioOpened{
-		BaseDomainEvent: *common.NewBaseDomainEvent("portfolio-opened"),
-		portfolioId:     portfolio.Id(),
-	})
+		baseDomainEvent: common.NewBaseDomainEvent("portfolio-opened"),
+		portfolioId:     string(portfolio.id),
+	},)
 
 	return portfolio, nil
 
-}
-
-type PortfolioId string
-
-type Portfolio struct {
-	domainEvents []common.DomainEvent
-	id           PortfolioId
-	name         string
 }
 
 func (p Portfolio) Id() PortfolioId {
@@ -57,24 +62,4 @@ func (p Portfolio) DomainEvents() []common.DomainEvent {
 
 func (p *Portfolio) ClearDomainEvents() {
 	p.domainEvents = []common.DomainEvent{}
-}
-
-type PortfolioRepository interface {
-	common.Repository[PortfolioId, *Portfolio]
-	FindByName(context.Context,  string) (*Portfolio, error)
-}
-
-type PortfolioOpened struct {
-	common.BaseDomainEvent
-	portfolioId PortfolioId
-}
-
-func (p PortfolioOpened) PortfolioId() PortfolioId {
-	return p.portfolioId
-}
-
-func (p PortfolioOpened) EventData() map[string]any {
-	return map[string]any{
-		"portfolioId": p.portfolioId,
-	}
 }
