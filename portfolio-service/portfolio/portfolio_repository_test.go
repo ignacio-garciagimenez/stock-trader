@@ -1,6 +1,7 @@
 package portfolio
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"stock-trader/portfolio-service/common"
@@ -15,14 +16,14 @@ import (
 func TestSavePortfolio(t *testing.T) {
 	db, _ := common.ConnectDB()
 
-	repo := NewMySQLPortfolioRepository(db)
+	repo := NewPortfolioRepository(db)
 
 	t.Run("given a portfolio should save with domain events", func(t *testing.T) {
 		portfolioName := fmt.Sprintf(`portfolio-%s-%s`, randomString(), randomString())
 		portfolio, _ := OpenPortfolio(portfolioName)
 		domainEvents := portfolio.DomainEvents()
 
-		err := repo.Save(portfolio)
+		err := repo.Save(context.Background(), portfolio)
 
 		if assert.NoError(t, err) {
 			var savedEntity portfolioEntity
@@ -47,7 +48,7 @@ func TestSavePortfolio(t *testing.T) {
 	})
 
 	t.Run("given a nil portfolio should return error", func(t *testing.T) {
-		err := repo.Save(nil)
+		err := repo.Save(context.Background(), nil)
 
 		if assert.Error(t, err) {
 			assert.Equal(t, "portfolio cannot be nil", err.Error())
@@ -58,29 +59,51 @@ func TestSavePortfolio(t *testing.T) {
 		portfolioName := fmt.Sprintf(`same-portfolio-name-%s`, randomString())
 		portfolio, _ := OpenPortfolio(portfolioName)
 
-		err := repo.Save(portfolio)
+		err := repo.Save(context.Background(), portfolio)
 
 		assert.NoError(t, err)
 
 		portfolioWithSameName, _ := OpenPortfolio(portfolioName)
 
-		err = repo.Save(portfolioWithSameName)
+		err = repo.Save(context.Background(), portfolioWithSameName)
 
 		if assert.Error(t, err) {
 			var savedEntities []portfolioEntity
 			db.Where("name = ?", portfolioName).Find(&savedEntities)
 
 			assert.True(t, len(savedEntities) == 1)
+			assert.Equal(t, string(portfolio.id), savedEntities[0].Id)
+
+			customErr, ok := err.(*PortfolioWithSameNameAlreadyOpened)
+			assert.True(t, ok)
+			assert.Equal(t, fmt.Sprintf(`a portfolio with name "%s" was already opened`, portfolioName), customErr.Error())
 		}
 	})
 
 	t.Run("given a portfolio already saved should update it", func(t *testing.T) {
+		portfolioName := fmt.Sprintf(`same-portfolio-name-%s`, randomString())
+		portfolio, _ := OpenPortfolio(portfolioName)
 
+		err := repo.Save(context.Background(), portfolio)
+
+		assert.NoError(t, err)
+
+		portfolio.name = fmt.Sprintf(`another-name-%s`, randomString())
+
+		err = repo.Save(context.Background(), portfolio)
+
+		if assert.NoError(t, err) {
+			var savedEntities []portfolioEntity
+			db.Where("id = ?", portfolio.id).Find(&savedEntities)
+
+			assert.True(t, len(savedEntities) == 1)
+			assert.Equal(t, string(portfolio.id), savedEntities[0].Id)
+			assert.Equal(t, portfolio.name, savedEntities[0].Name)
+		}
 	})
 
 }
 
 func randomString() string {
-	x := strings.Split(uuid.NewString(), "-")[0]
-	return x
+	return strings.Split(uuid.NewString(), "-")[0]
 }

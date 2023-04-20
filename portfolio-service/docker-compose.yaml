@@ -30,7 +30,7 @@ services:
 
   portfolio-service:
     build:
-      context: portfolio-service
+      context: .
       dockerfile: Dockerfile
       target: dev
     image: portfolio-dev
@@ -41,7 +41,7 @@ services:
       - "8080:8080"
       - "9090:9090"
     volumes:
-      - ${SOURCE_PATH}/portfolio-service:/code
+      - ${SOURCE_PATH:-$PWD}/portfolio-service:/code
     networks: 
       - stock-trader
     command: reflex -r "\.go$" -s -- sh -c "dlv debug . --output=/tmp/__portfolio_debug_bin --listen=0.0.0.0:9090 --accept-multiclient --continue --headless --allow-non-terminal-interactive"

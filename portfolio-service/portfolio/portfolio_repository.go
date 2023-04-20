@@ -4,41 +4,11 @@ import (
 	"context"
 	"errors"
 	"stock-trader/portfolio-service/common"
+	"strings"
 
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
-
-type inMemoryBaseRepository = common.InMemoryBaseRepository[PortfolioId, *Portfolio]
-
-type InMemoryPortfolioRepository struct {
-	*inMemoryBaseRepository
-	nameIndex map[string]*Portfolio
-}
-
-func NewInMemoryPortfolioRepository() *InMemoryPortfolioRepository {
-	return &InMemoryPortfolioRepository{
-		inMemoryBaseRepository: common.NewInMemoryBaseRepository[PortfolioId, *Portfolio](),
-		nameIndex:              map[string]*Portfolio{},
-	}
-}
-
-func (r *InMemoryPortfolioRepository) Save(ctx context.Context, entity *Portfolio) error {
-	if err := r.inMemoryBaseRepository.Save(ctx, entity); err != nil {
-		return err
-	}
-
-	r.nameIndex[entity.name] = entity
-	return nil
-}
-
-func (r *InMemoryPortfolioRepository) FindByName(ctx context.Context, name string) (*Portfolio, error) {
-	if portfolio, found := r.nameIndex[name]; found {
-		return portfolio, nil
-	}
-
-	return nil, errors.New("entity not found")
-}
 
 type portfolioEntity struct {
 	Id   string `gorm:"column:id"`
@@ -64,28 +34,34 @@ type mySQLPortfolioRepository struct {
 	db *gorm.DB
 }
 
-func NewMySQLPortfolioRepository(db *gorm.DB) *mySQLPortfolioRepository {
+func NewPortfolioRepository(db *gorm.DB) PortfolioRepository {
 	return &mySQLPortfolioRepository{
 		db: db,
 	}
 }
 
-func (r *mySQLPortfolioRepository) FindById(portfolioId PortfolioId) (*Portfolio, error) {
+func (r *mySQLPortfolioRepository) FindById(ctx context.Context, portfolioId PortfolioId) (*Portfolio, error) {
 	return nil, nil
 }
 
-func (r *mySQLPortfolioRepository) Save(portfolio *Portfolio) error {
+func (r *mySQLPortfolioRepository) Save(ctx context.Context, portfolio *Portfolio) error {
 	mappedEntity, err := mapPortfolioEntity(portfolio)
 	if err != nil {
 		return err
 	}
 
 	return r.db.Transaction(func(tx *gorm.DB) error {
-		if result := tx.Where("id = ?", mappedEntity.Id).FirstOrCreate(&mappedEntity); result.RowsAffected == 0 {
-			if result.Error != nil {
-				return result.Error
+		if result := tx.Where("id = ?", mappedEntity.Id).First(&portfolioEntity{}); result.RowsAffected == 0 {
+			if result = tx.Create(mappedEntity); result.RowsAffected == 0 {
+				if result.Error != nil {
+					if isDuplicate := isDuplicatePortfolioNameError(result.Error); isDuplicate {
+						return NewPortfolioWithSameNameAlreadyOpened(portfolio.name)
+					}
+					return result.Error
+				}
 			}
 
+		} else {
 			if result = tx.Save(mappedEntity); result.Error != nil {
 				return result.Error
 			}
@@ -111,6 +87,11 @@ func (r *mySQLPortfolioRepository) Save(portfolio *Portfolio) error {
 
 }
 
-func (r *mySQLPortfolioRepository) findByName(portfolioName string) (*Portfolio, error) {
+func (r *mySQLPortfolioRepository) FindByName(ctx context.Context, portfolioName string) (*Portfolio, error) {
 	return nil, nil
+}
+
+func isDuplicatePortfolioNameError(err error) bool {
+	return strings.Contains(err.Error(), "Duplicate entry") &&
+		strings.Contains(err.Error(), "portfolios.idx_name")
 }

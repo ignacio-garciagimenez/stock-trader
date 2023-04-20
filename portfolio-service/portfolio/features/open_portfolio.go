@@ -9,14 +9,6 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-type OpenPortfolioHandler struct {
-	portfolioRepository portfolio.PortfolioRepository
-}
-
-type OpenPortfolioCommand struct {
-	Name string `json:"name" validate:"required,gt=4,lt=31"`
-}
-
 type OpenPortfolioEndpoint struct {
 	handler common.Handler[OpenPortfolioCommand, portfolio.PortfolioId]
 }
@@ -46,6 +38,14 @@ func (e *OpenPortfolioEndpoint) Open(c echo.Context) error {
 		PortfolioId: portfolioId,
 	})
 }
+
+type OpenPortfolioCommand struct {
+	Name string `json:"name" validate:"required,gt=4,lt=31"`
+}
+
+type OpenPortfolioHandler struct {
+	portfolioRepository portfolio.PortfolioRepository
+} 
 
 func (h *OpenPortfolioHandler) Handle(ctx context.Context, command OpenPortfolioCommand) (portfolio.PortfolioId, error) {
 	portfolio, err := portfolio.OpenPortfolio(command.Name)

@@ -10,11 +10,6 @@ import (
 	"github.com/google/uuid"
 )
 
-type PortfolioRepository interface {
-	common.Repository[PortfolioId, *Portfolio]
-	FindByName(context.Context, string) (*Portfolio, error)
-}
-
 type PortfolioId string
 
 type Portfolio struct {
@@ -62,4 +57,10 @@ func (p Portfolio) DomainEvents() []common.DomainEvent {
 
 func (p *Portfolio) ClearDomainEvents() {
 	p.domainEvents = []common.DomainEvent{}
+}
+
+type PortfolioRepository interface {
+	FindById(context.Context, PortfolioId) (*Portfolio, error)
+	Save(context.Context, *Portfolio) error
+	FindByName(context.Context, string) (*Portfolio, error)
 }

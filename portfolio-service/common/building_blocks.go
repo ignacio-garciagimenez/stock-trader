@@ -2,7 +2,6 @@ package common
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	"github.com/google/uuid"
@@ -55,45 +54,4 @@ func (d BaseDomainEvent) Name() string {
 
 func (d BaseDomainEvent) Timestamp() time.Time {
 	return d.timestamp
-}
-
-type AggregateRoot[K comparable] interface {
-	Id() K
-	DomainEvents() []DomainEvent
-	ClearDomainEvents()
-}
-
-type Repository[K comparable, V AggregateRoot[K]] interface {
-	FindById(context.Context, K) (V, error)
-	Save(context.Context, V) error
-}
-
-type InMemoryBaseRepository[K comparable, V AggregateRoot[K]] struct {
-	entities     map[K]V
-	domainEvents []DomainEvent
-}
-
-func (r *InMemoryBaseRepository[K, V]) FindById(ctx context.Context, key K) (V, error) {
-	var entity V
-	if entity, found := r.entities[key]; found {
-		return entity, nil
-	}
-	return entity, errors.New("entity not found")
-
-}
-
-func (r *InMemoryBaseRepository[K, V]) Save(ctx context.Context, entity V) error {
-	r.entities[entity.Id()] = entity
-
-	//For Transactional Outbox implementation
-	r.domainEvents = append(r.domainEvents, entity.DomainEvents()...)
-
-	return nil
-}
-
-func NewInMemoryBaseRepository[K comparable, V AggregateRoot[K]]() *InMemoryBaseRepository[K, V] {
-	return &InMemoryBaseRepository[K, V]{
-		entities:     map[K]V{},
-		domainEvents: []DomainEvent{},
-	}
 }

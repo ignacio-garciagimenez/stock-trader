@@ -19,7 +19,7 @@ services:
 
   broker-service:
     build:
-      context: broker-service
+      context: .
       dockerfile: Dockerfile
       target: dev
     image: broker-dev
@@ -30,7 +30,7 @@ services:
       - "8081:8081"
       - "9091:9091"
     volumes:
-      - ${SOURCE_PATH}/broker-service:/code
+      - ${SOURCE_PATH-$PWD}/broker-service:/code
     networks:
       - stock-trader
     command: reflex -r "\.go$" -s -- sh -c "dlv debug . --output=/tmp/__broker_debug_bin --listen=0.0.0.0:9091 --accept-multiclient --continue --headless --allow-non-terminal-interactive"

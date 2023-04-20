@@ -19,7 +19,7 @@ import (
 func Test_OpenPortfolioHandler(t *testing.T) {
 	t.Run("Open portfolio with empty name", func(t *testing.T) {
 		handler := &OpenPortfolioHandler{
-			portfolioRepository: &portfolio.InMemoryPortfolioRepository{},
+			portfolioRepository: &StubPortfolioRepository{},
 		}
 
 		portfolioId, err := handler.Handle(context.Background(), OpenPortfolioCommand{
@@ -33,7 +33,7 @@ func Test_OpenPortfolioHandler(t *testing.T) {
 
 	t.Run("Open portfolio with short name", func(t *testing.T) {
 		handler := &OpenPortfolioHandler{
-			portfolioRepository: &portfolio.InMemoryPortfolioRepository{},
+			portfolioRepository: &StubPortfolioRepository{},
 		}
 
 		portfolioId, err := handler.Handle(context.Background(), OpenPortfolioCommand{
@@ -47,7 +47,7 @@ func Test_OpenPortfolioHandler(t *testing.T) {
 
 	t.Run("Open portfolio with long name", func(t *testing.T) {
 		handler := &OpenPortfolioHandler{
-			portfolioRepository: &portfolio.InMemoryPortfolioRepository{},
+			portfolioRepository: &StubPortfolioRepository{},
 		}
 
 		portfolioId, err := handler.Handle(context.Background(), OpenPortfolioCommand{
@@ -81,7 +81,11 @@ func Test_OpenPortfolioHandler(t *testing.T) {
 	})
 
 	t.Run("Open portfolio successfully", func(t *testing.T) {
-		repo := portfolio.NewInMemoryPortfolioRepository()
+		repo := &StubPortfolioRepository{
+			save: func(ctx context.Context, p *portfolio.Portfolio) error {
+				return nil
+			},
+		}
 		handler := &OpenPortfolioHandler{
 			portfolioRepository: repo,
 		}
@@ -92,10 +96,7 @@ func Test_OpenPortfolioHandler(t *testing.T) {
 
 		assert.Nil(t, err)
 		assert.NotEmpty(t, portfolioId)
-		assert.NotNil(t, func() *portfolio.Portfolio {
-			portfolio, _ := repo.FindById(context.Background(), portfolioId)
-			return portfolio
-		}())
+		assert.Equal(t, 1, repo.callsToSave)
 	})
 }
 
@@ -240,12 +241,14 @@ func (s *StubHandler[K, V]) Handle(ctx context.Context, command K) (V, error) {
 }
 
 type StubPortfolioRepository struct {
-	save       func(context.Context, *portfolio.Portfolio) error
-	findById   func(context.Context, portfolio.PortfolioId) (*portfolio.Portfolio, error)
-	findByName func(context.Context, string) (*portfolio.Portfolio, error)
+	callsToSave int
+	save        func(context.Context, *portfolio.Portfolio) error
+	findById    func(context.Context, portfolio.PortfolioId) (*portfolio.Portfolio, error)
+	findByName  func(context.Context, string) (*portfolio.Portfolio, error)
 }
 
 func (r *StubPortfolioRepository) Save(ctx context.Context, portfolio *portfolio.Portfolio) error {
+	r.callsToSave++
 	return r.save(ctx, portfolio)
 }
 
