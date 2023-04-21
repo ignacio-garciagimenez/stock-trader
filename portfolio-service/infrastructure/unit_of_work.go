@@ -1,4 +1,4 @@
-package common
+package infrastructure
 
 import (
 	"database/sql"
@@ -11,10 +11,13 @@ type GormUnitOfWork interface {
 	Transaction(func (tx *gorm.DB) error, ...*sql.TxOptions) error
 }
 
-func WithTransaction(uow GormUnitOfWork, handlerBuilder func(db *gorm.DB) echo.HandlerFunc) echo.HandlerFunc {
+
+type FeatureBuilder = func (db *gorm.DB) echo.HandlerFunc
+
+func WithTransaction(uow GormUnitOfWork, builderFunc FeatureBuilder) echo.HandlerFunc {
 	return func (context echo.Context) error {
 		return uow.Transaction(func(tx *gorm.DB) error {
-			return handlerBuilder(tx)(context)
+			return builderFunc(tx)(context)
 		})
 	}
 }

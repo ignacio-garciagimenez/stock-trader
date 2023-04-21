@@ -2,6 +2,7 @@ package portfolio
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"stock-trader/portfolio-service/common"
 	"stock-trader/portfolio-service/portfolio"
@@ -13,7 +14,7 @@ type OpenPortfolioEndpoint struct {
 	handler common.Handler[OpenPortfolioCommand, portfolio.PortfolioId]
 }
 
-func NewPorfolioEndpoint(handler common.Handler[OpenPortfolioCommand, portfolio.PortfolioId]) *OpenPortfolioEndpoint {
+func NewOpenPortfolioEndpoint(handler common.Handler[OpenPortfolioCommand, portfolio.PortfolioId]) *OpenPortfolioEndpoint {
 	return &OpenPortfolioEndpoint{
 		handler: handler,
 	}
@@ -32,7 +33,7 @@ func (e *OpenPortfolioEndpoint) Open(c echo.Context) error {
 	portfolioId, err := e.handler.Handle(c.Request().Context(), *command)
 
 	if err != nil {
-		if err, ok := err.(*portfolio.PortfolioWithSameNameAlreadyOpened); ok {
+		if errors.Is(err, portfolio.ErrPortfolioNameAlreadyInUse) {
 			return echo.NewHTTPError(http.StatusConflict, err.Error())
 		}
 		return echo.NewHTTPError(500, err.Error())

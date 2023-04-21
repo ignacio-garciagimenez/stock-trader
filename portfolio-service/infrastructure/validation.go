@@ -1,4 +1,4 @@
-package common
+package infrastructure
 
 import (
 	"net/http"

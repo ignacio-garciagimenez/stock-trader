@@ -3,6 +3,7 @@ package portfolio
 import (
 	"context"
 	"errors"
+	"fmt"
 	"stock-trader/portfolio-service/common"
 	"strings"
 
@@ -55,7 +56,7 @@ func (r *mySQLPortfolioRepository) Save(ctx context.Context, portfolio *Portfoli
 			if result = tx.Create(mappedEntity); result.RowsAffected == 0 {
 				if result.Error != nil {
 					if isDuplicate := isDuplicatePortfolioNameError(result.Error); isDuplicate {
-						return NewPortfolioWithSameNameAlreadyOpened(portfolio.name)
+						return fmt.Errorf("%w: %s", ErrPortfolioNameAlreadyInUse, portfolio.name)
 					}
 					return result.Error
 				}

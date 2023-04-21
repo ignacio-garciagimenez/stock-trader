@@ -1,4 +1,4 @@
-package portfolio
+package portfolio_test
 
 import (
 	"context"
@@ -6,8 +6,9 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"stock-trader/portfolio-service/common"
+	"stock-trader/portfolio-service/infrastructure"
 	"stock-trader/portfolio-service/portfolio"
+	features "stock-trader/portfolio-service/portfolio/features"
 	"strings"
 	"testing"
 
@@ -18,11 +19,9 @@ import (
 
 func Test_OpenPortfolioHandler(t *testing.T) {
 	t.Run("Open portfolio with empty name", func(t *testing.T) {
-		handler := &OpenPortfolioHandler{
-			portfolioRepository: &StubPortfolioRepository{},
-		}
+		handler := features.NewOpenPortfolioHandler(&StubPortfolioRepository{})
 
-		portfolioId, err := handler.Handle(context.Background(), OpenPortfolioCommand{
+		portfolioId, err := handler.Handle(context.Background(), features.OpenPortfolioCommand{
 			Name: "    ",
 		})
 
@@ -32,11 +31,9 @@ func Test_OpenPortfolioHandler(t *testing.T) {
 	})
 
 	t.Run("Open portfolio with short name", func(t *testing.T) {
-		handler := &OpenPortfolioHandler{
-			portfolioRepository: &StubPortfolioRepository{},
-		}
+		handler := features.NewOpenPortfolioHandler(&StubPortfolioRepository{})
 
-		portfolioId, err := handler.Handle(context.Background(), OpenPortfolioCommand{
+		portfolioId, err := handler.Handle(context.Background(), features.OpenPortfolioCommand{
 			Name: "  Name  ",
 		})
 
@@ -46,11 +43,9 @@ func Test_OpenPortfolioHandler(t *testing.T) {
 	})
 
 	t.Run("Open portfolio with long name", func(t *testing.T) {
-		handler := &OpenPortfolioHandler{
-			portfolioRepository: &StubPortfolioRepository{},
-		}
+		handler := features.NewOpenPortfolioHandler(&StubPortfolioRepository{})
 
-		portfolioId, err := handler.Handle(context.Background(), OpenPortfolioCommand{
+		portfolioId, err := handler.Handle(context.Background(), features.OpenPortfolioCommand{
 			Name: "  Name that is longer than 30 characters  ",
 		})
 
@@ -62,20 +57,17 @@ func Test_OpenPortfolioHandler(t *testing.T) {
 	t.Run("Open portfolio with name already provided", func(t *testing.T) {
 		repo := &StubPortfolioRepository{
 			save: func(ctx context.Context, p *portfolio.Portfolio) error {
-				return portfolio.NewPortfolioWithSameNameAlreadyOpened("A portfolio name")
+				return fmt.Errorf("%w: %s", portfolio.ErrPortfolioNameAlreadyInUse, "A portfolio name")
 			},
 		}
-		handler := &OpenPortfolioHandler{
-			portfolioRepository: repo,
-		}
+		handler := features.NewOpenPortfolioHandler(repo)
 
-		portfolioId, err := handler.Handle(context.Background(), OpenPortfolioCommand{
+		portfolioId, err := handler.Handle(context.Background(), features.OpenPortfolioCommand{
 			Name: "  A portfolio name  ",
 		})
 
-		if assert.Error(t, err) {
-			assert.IsType(t, &portfolio.PortfolioWithSameNameAlreadyOpened{}, err)
-			assert.Equal(t, `a portfolio with name "A portfolio name" was already opened`, err.Error())
+		if assert.ErrorIs(t, err, portfolio.ErrPortfolioNameAlreadyInUse) {
+			assert.Equal(t, `portfolio name already in use: A portfolio name`, err.Error())
 			assert.Empty(t, portfolioId)
 		}
 	})
@@ -86,11 +78,9 @@ func Test_OpenPortfolioHandler(t *testing.T) {
 				return nil
 			},
 		}
-		handler := &OpenPortfolioHandler{
-			portfolioRepository: repo,
-		}
+		handler := features.NewOpenPortfolioHandler(repo)
 
-		portfolioId, err := handler.Handle(context.Background(), OpenPortfolioCommand{
+		portfolioId, err := handler.Handle(context.Background(), features.OpenPortfolioCommand{
 			Name: "  A portfolio name  ",
 		})
 
@@ -103,16 +93,14 @@ func Test_OpenPortfolioHandler(t *testing.T) {
 func Test_OpenPortfolioEndpoint(t *testing.T) {
 	t.Run("Open Portfolio Successfully", func(t *testing.T) {
 		portfolioId := portfolio.PortfolioId(uuid.NewString())
-		endpoint := &OpenPortfolioEndpoint{
-			handler: &StubHandler[OpenPortfolioCommand, portfolio.PortfolioId]{
-				call: func(ctx context.Context, command OpenPortfolioCommand) (portfolio.PortfolioId, error) {
-					return portfolioId, nil
-				},
+		endpoint := features.NewOpenPortfolioEndpoint(&StubHandler[features.OpenPortfolioCommand, portfolio.PortfolioId]{
+			call: func(ctx context.Context, command features.OpenPortfolioCommand) (portfolio.PortfolioId, error) {
+				return portfolioId, nil
 			},
-		}
+		})
 
 		e := echo.New()
-		e.Validator = common.NewRequestValidator()
+		e.Validator = infrastructure.NewRequestValidator()
 		req := httptest.NewRequest(http.MethodPost, "/portfolios", strings.NewReader(fmt.Sprintf(`{"name":"%s"}`, "A Portfolio name")))
 		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 		rec := httptest.NewRecorder()
@@ -125,17 +113,18 @@ func Test_OpenPortfolioEndpoint(t *testing.T) {
 	})
 	t.Run("Open Portfolio With PortfolioWithSameNameAlreadyOpenedError", func(t *testing.T) {
 		portfolioId := portfolio.PortfolioId(uuid.NewString())
-		endpoint := &OpenPortfolioEndpoint{
-			handler: &StubHandler[OpenPortfolioCommand, portfolio.PortfolioId]{
-				call: func(ctx context.Context, command OpenPortfolioCommand) (portfolio.PortfolioId, error) {
-					return portfolioId, portfolio.NewPortfolioWithSameNameAlreadyOpened("A Portfolio name")
+		portfolioName := "A Portfolio name"
+		endpoint := features.NewOpenPortfolioEndpoint(
+			&StubHandler[features.OpenPortfolioCommand, portfolio.PortfolioId]{
+				call: func(ctx context.Context, command features.OpenPortfolioCommand) (portfolio.PortfolioId, error) {
+					return portfolioId, fmt.Errorf("%w: %s", portfolio.ErrPortfolioNameAlreadyInUse, portfolioName)
 				},
 			},
-		}
+		)
 
 		e := echo.New()
-		e.Validator = common.NewRequestValidator()
-		req := httptest.NewRequest(http.MethodPost, "/portfolios", strings.NewReader(fmt.Sprintf(`{"name":"%s"}`, "A Portfolio name")))
+		e.Validator = infrastructure.NewRequestValidator()
+		req := httptest.NewRequest(http.MethodPost, "/portfolios", strings.NewReader(fmt.Sprintf(`{"name":"%s"}`, portfolioName)))
 		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 		rec := httptest.NewRecorder()
 		c := e.NewContext(req, rec)
@@ -145,20 +134,20 @@ func Test_OpenPortfolioEndpoint(t *testing.T) {
 		if assert.Error(t, err) {
 			err := err.(*echo.HTTPError)
 			assert.Equal(t, http.StatusConflict, err.Code)
-			assert.Equal(t, `a portfolio with name "A Portfolio name" was already opened`, err.Message)
+			assert.Equal(t, `portfolio name already in use: A Portfolio name`, err.Message)
 		}
 	})
 	t.Run("Open Portfolio With Unexpected Error", func(t *testing.T) {
-		endpoint := &OpenPortfolioEndpoint{
-			handler: &StubHandler[OpenPortfolioCommand, portfolio.PortfolioId]{
-				call: func(ctx context.Context, command OpenPortfolioCommand) (portfolio.PortfolioId, error) {
+		endpoint := features.NewOpenPortfolioEndpoint(
+			&StubHandler[features.OpenPortfolioCommand, portfolio.PortfolioId]{
+				call: func(ctx context.Context, command features.OpenPortfolioCommand) (portfolio.PortfolioId, error) {
 					return "", errors.New("unexpected error")
 				},
 			},
-		}
+		)
 
 		e := echo.New()
-		e.Validator = common.NewRequestValidator()
+		e.Validator = infrastructure.NewRequestValidator()
 		req := httptest.NewRequest(http.MethodPost, "/portfolios", strings.NewReader(fmt.Sprintf(`{"name":"%s"}`, "A Portfolio name")))
 		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 		rec := httptest.NewRecorder()
@@ -196,12 +185,10 @@ func Test_OpenPortfolioEndpoint(t *testing.T) {
 			},
 		}
 
-		endpoint := &OpenPortfolioEndpoint{
-			handler: nil,
-		}
+		endpoint := features.NewOpenPortfolioEndpoint(nil)
 
 		e := echo.New()
-		e.Validator = common.NewRequestValidator()
+		e.Validator = infrastructure.NewRequestValidator()
 
 		for _, tc := range tests {
 			t.Run(tc.testName, func(t *testing.T) {
@@ -215,9 +202,9 @@ func Test_OpenPortfolioEndpoint(t *testing.T) {
 				if assert.Error(t, err) {
 					err := err.(*echo.HTTPError)
 					assert.Equal(t, http.StatusBadRequest, err.Code)
-					assert.Equal(t, &common.ValidationErrorsResponse{
+					assert.Equal(t, &infrastructure.ValidationErrorsResponse{
 						Message: "there were validation errors",
-						Errors: []common.FieldError{
+						Errors: []infrastructure.FieldError{
 							{
 								Field: "Name",
 								Error: tc.validationResponse,
