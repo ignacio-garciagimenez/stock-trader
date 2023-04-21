@@ -13,6 +13,12 @@ type OpenPortfolioEndpoint struct {
 	handler common.Handler[OpenPortfolioCommand, portfolio.PortfolioId]
 }
 
+func NewPorfolioEndpoint(handler common.Handler[OpenPortfolioCommand, portfolio.PortfolioId]) *OpenPortfolioEndpoint {
+	return &OpenPortfolioEndpoint{
+		handler: handler,
+	}
+}
+
 func (e *OpenPortfolioEndpoint) Open(c echo.Context) error {
 	command := new(OpenPortfolioCommand)
 	if err := c.Bind(command); err != nil {
@@ -45,7 +51,13 @@ type OpenPortfolioCommand struct {
 
 type OpenPortfolioHandler struct {
 	portfolioRepository portfolio.PortfolioRepository
-} 
+}
+
+func NewOpenPortfolioHandler(repository portfolio.PortfolioRepository) *OpenPortfolioHandler {
+	return &OpenPortfolioHandler{
+		portfolioRepository: repository,
+	}
+}
 
 func (h *OpenPortfolioHandler) Handle(ctx context.Context, command OpenPortfolioCommand) (portfolio.PortfolioId, error) {
 	portfolio, err := portfolio.OpenPortfolio(command.Name)

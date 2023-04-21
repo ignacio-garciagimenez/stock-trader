@@ -40,6 +40,8 @@ services:
     ports:
       - "8080:8080"
       - "9090:9090"
+    environment:
+      MYSQL_HOST: mysql
     volumes:
       - ${SOURCE_PATH:-$PWD}/portfolio-service:/code
     networks: 

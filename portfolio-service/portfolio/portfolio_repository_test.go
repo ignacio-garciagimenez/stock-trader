@@ -55,7 +55,7 @@ func TestSavePortfolio(t *testing.T) {
 		}
 	})
 
-	t.Run("given a repeated portfolio name should return error", func(t *testing.T) {
+	t.Run("given a repeated portfolio name should return error and not save domain events", func(t *testing.T) {
 		portfolioName := fmt.Sprintf(`same-portfolio-name-%s`, randomString())
 		portfolio, _ := OpenPortfolio(portfolioName)
 
@@ -68,15 +68,18 @@ func TestSavePortfolio(t *testing.T) {
 		err = repo.Save(context.Background(), portfolioWithSameName)
 
 		if assert.Error(t, err) {
+			customErr, ok := err.(*PortfolioWithSameNameAlreadyOpened)
+			assert.True(t, ok)
+			assert.Equal(t, fmt.Sprintf(`a portfolio with name "%s" was already opened`, portfolioName), customErr.Error())
+
 			var savedEntities []portfolioEntity
 			db.Where("name = ?", portfolioName).Find(&savedEntities)
 
 			assert.True(t, len(savedEntities) == 1)
 			assert.Equal(t, string(portfolio.id), savedEntities[0].Id)
 
-			customErr, ok := err.(*PortfolioWithSameNameAlreadyOpened)
-			assert.True(t, ok)
-			assert.Equal(t, fmt.Sprintf(`a portfolio with name "%s" was already opened`, portfolioName), customErr.Error())
+			result := db.Raw("SELECT * FROM event_journal WHERE id = ?", portfolioWithSameName.domainEvents[0].Id()).Scan([]any{})
+			assert.True(t, result.RowsAffected == 0)
 		}
 	})
 
