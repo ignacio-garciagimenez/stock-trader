@@ -1,0 +1,35 @@
+receivers:
+  otlp:
+    protocols:
+      http:
+
+exporters:
+  logging:
+
+  otlp:
+    endpoint: jaeger:55680
+    tls:
+      insecure: true
+
+processors:
+  attributes:
+    actions:
+      - key: service
+        value: portfolio-service
+        action: insert
+
+  resource:
+    attributes:
+      - key: service.name
+        value: portfolio-service
+        action: insert
+
+  batch:
+
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [attributes, resource, batch]
+      exporters: [logging, otlp]

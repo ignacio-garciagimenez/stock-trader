@@ -28,6 +28,27 @@ services:
     volumes:
       - ${SOURCE_PATH}/portfolio-service/migrations/:/migrations
 
+  jaeger:
+    image: jaegertracing/opentelemetry-all-in-one:latest
+    ports:
+      - "16686:16686"
+      - "55680:55680"
+    networks:
+      - stock-trader
+
+  portfolio-service-otelcol:
+    image: otel/opentelemetry-collector-contrib:0.75.0
+    command: ["--config=/etc/otel-collector-config.yaml", ""]
+    volumes:
+      - ${SOURCE_PATH}/portfolio-service/otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    ports:
+      - "4318:4318"   # OTLP http receiver
+    depends_on:
+      jaeger:
+        condition: service_started
+    networks:
+      - stock-trader
+
   portfolio-service:
     build:
       context: .
@@ -37,6 +58,8 @@ services:
     depends_on:
       migrate:
         condition: service_completed_successfully
+      portfolio-service-otelcol:
+        condition: service_started
     ports:
       - "8080:8080"
       - "9090:9090"
